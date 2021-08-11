@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        <button id="getover">over view</button>
+        <div id="overview"></div>
+    </div>
+        
+    <div class="boardform">
+        <label for="newboardname">boardname</label>
+        <input id='newboardname' type="text">
+        <label for="newboardPass">boardPass</label>
+        <input id="newboardPass" type="text">
+        <button id='submitboard' >submit board</button>
+    </div>
+    <hr>
+    <div class="scoreform">
+        <label for="boardname">boardname</label>
+        <input id='boardname' type="text">
+        <label for="boardPass">boardPass</label>
+        <input id="boardPass" type="text">
+        <label for="score">score</label>
+        <input id='score' type="number">
+        <label for="score_name">score name</label>
+        <input id="score_name" type="text">
+        <button id='submitscore' >submit score</button>
+    </div>
+    <hr>
+    <div class="scoreform">
+        <label for="oldboardname">boardname</label>
+        <input id='oldboardname' type="text">
+        
+        <button id='show'>show scores</button>
+    </div>
+    <div class="container">
+        
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script>
+        const csrftoken = Cookies.get('csrftoken');
+        // const domain = "http://127.0.0.1:8000"
+        const domain = "https://api-and-websockets.herokuapp.com"
+
+        // start getting over view
+        const overbtn = document.getElementById("getover")  // this button should try to get all links you need to work with
+        overbtn.onclick = async () => {
+            let url = domain + "/api/" // watch the last /
+            let data = await fetch(url) // this uses get method and get the data from the url without giving any parameters
+            data = await data.json()  // turns the data from json to normal JS object so you can work with it 
+            const elem = document.querySelector(".container")
+            elem.innerHTML = ""
+            for (item in data){
+                elem.innerHTML += `${item}: ${data[item]}\n`
+            }
+            
+        }
+
+        // start of creating new board.. 
+        let boardBTN = document.querySelector("#submitboard")
+        boardBTN.onclick = async event => {
+            console.log("submiting board")
+            let url = domain + "/api/create_board/" // also don't forget any slaches or mess any letter
+            let name = document.querySelector("#newboardname").value
+            let password = document.querySelector("#newboardPass").value
+            // sending the data to the url
+            let data = await fetch(url, {
+                method: "POST", // note we use post method for senstive info like password
+                headers:{
+                    "Content-type": "application/json",  // declaration of using the json type
+                },
+                body: JSON.stringify({  // convert normal JS object to json format
+                    "name": name,
+                    "password": password
+                })
+            })
+            // note we have saved the fetch response in a variable data so we can hanle any errors or use any returned data 
+            data = await data.json() // turning the response from json format to javaScript object
+            let container = document.querySelector(".container")
+            container.innerHTML = data.message
+            
+            // the message with the response result -- you can do any thing on the success like for example 
+            // rendering the board to the document
+            // يعني بص انا كل ريسبونس ليه نجاح بحطلك فيه مسدج عشان تعرف اذا كان نجح ولا لا و برضو الاكواد اللي هي 404 و كده شغالة معاك يعني
+        }
+
+        // start saving the score to a certain board
+        let saveScoreBtn = document.querySelector("#submitscore")
+        saveScoreBtn.onclick = async () => {
+            console.log("start saving the score")
+            let board_name = document.querySelector("#boardname").value
+            let board_pass = document.querySelector("#boardPass").value
+            let score = document.querySelector("#score").value
+            let score_name = document.querySelector("#score_name").value
+            let url = domain + "/api/save_score/"
+            let data = await fetch(url , {
+                method: "POST", 
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body:JSON.stringify({
+                    "board": board_name,
+                    "password": board_pass,
+                    "score": parseInt(score), // you have to send data with the right datatype
+                    "name": score_name
+                }) 
+            })
+            data = await data.json()
+            let container = document.querySelector(".container")
+            container.innerHTML = data.message
+        }
+
+
+        // start reading board data and rendering it
+        let showBtn = document.querySelector("#show")
+        let build_board = async (name) => {
+            let url = domain + `/api/get_scores/${name}/` // you can change this to "https://api-and-websockets.herokuapp.com/api/get_scores"
+            console.log(url);
+            let data = await fetch(url)
+            data = await data.json()            
+            let container = document.querySelector(".container")
+            container.innerHTML = ""
+            for (item of data){
+                tag = `
+                <hr>
+                <div>
+                    ${item.name}>> ${item.score}
+                </div>`
+                container.innerHTML += tag
+            }
+            
+        }
+        
+        showBtn.addEventListener("click", ()=>{
+            let name = document.querySelector("#oldboardname").value
+            build_board(name)
+        } )
+
+        let update_password = async (name, old_password, password) =>{
+            const url = domain + "/api/update_password/"
+            let data = await fetch(url , {
+                method: "POST",
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "name": name,
+                    "old password": old_password,
+                    "password": password
+                })
+            })
+            data = data.json()
+            console.log(data);
+
+        }
+    </script>
+
+</body>
+</html>
